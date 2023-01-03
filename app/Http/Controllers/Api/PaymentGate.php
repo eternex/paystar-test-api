@@ -110,7 +110,7 @@ class PaymentGate extends Controller
         if ($invoicePaid == null) {
             return response([
                 'message' => 'Error: Not found this invoice!'
-            ], 422);
+            ], 404);
         }
 
         // Check payment.
