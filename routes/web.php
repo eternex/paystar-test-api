@@ -10,6 +10,7 @@ use App\Models\Paid;
 use App\PayStarErrorsHandler;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 
@@ -78,32 +79,17 @@ Route::get('/paystar/callback', function (Request $request) {
          */
         $signaturePlainText = sprintf("%s#%s#%s#%s", $invoice->payment_amount, $invoice->ref_num, $invoicePaid->card_number, $invoicePaid->tracking_code);
         $signatureHashed = hash_hmac('sha512', $signaturePlainText, env('PAY_STAR_IPG_SECRET'));
-        $payloadRequest = [
+        
+        // Make a http call to request payment. 
+        $responseVerify = Http::withHeaders([
+            "Authorization" => "Bearer " . env('PAY_STAR_IPG_GATEWAY_ID'),
+            "Content-Type" => "application/json",
+        ])->post(env('PAY_STAR_IPG_END_POINT') . '/create', [
             "amount"=> $invoice->payment_amount,
             "ref_num"=> $invoice->ref_num,
             "sign"=> $signatureHashed,
-        ];
-        
-        // Make a http call to request payment.
-        $curl = curl_init();
-        curl_setopt_array($curl, [
-            CURLOPT_URL => env('PAY_STAR_IPG_END_POINT').'/verify',
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => '',
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 0,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => 'POST',
-            CURLOPT_POSTFIELDS =>json_encode($payloadRequest),
-            CURLOPT_HTTPHEADER => [
-              'Authorization: Bearer '.env('PAY_STAR_IPG_GATEWAY_ID'),
-              'Content-Type: application/json'
-            ],
-        ]);
-        $responseVerify = curl_exec($curl);
-        $responseVerify = json_decode($responseVerify);
-        curl_close($curl);
+        ])->object();
+
 
         // Update Veryfy status.
         $invoicePaid = InvoicePaid::find($invoice_id);

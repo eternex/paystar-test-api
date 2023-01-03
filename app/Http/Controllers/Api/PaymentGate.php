@@ -8,6 +8,7 @@ use App\Models\Invoice;
 use App\Models\InvoicePaid;
 use App\PayStarErrorsHandler;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class PaymentGate extends Controller
@@ -37,7 +38,12 @@ class PaymentGate extends Controller
         $amount_based_iranian_rial =  $cart->amount * 10;
         $signaturePlainText = sprintf("%s#%s#%s", $amount_based_iranian_rial, $invoice->id, env('CALLBACK_PAY_STAR_IPG'));
         $signatureHashed = hash_hmac('sha512', $signaturePlainText, env('PAY_STAR_IPG_SECRET'));
-        $payloadRequest = [
+
+        // Make a http call to request payment.
+        $response = Http::withHeaders([
+            "Authorization" => "Bearer " . env('PAY_STAR_IPG_GATEWAY_ID'),
+            "Content-Type" => "application/json",
+        ])->post(env('PAY_STAR_IPG_END_POINT') . '/create', [
             "amount" => $amount_based_iranian_rial,
             "order_id" => $invoice->id,
             "callback" => env('CALLBACK_PAY_STAR_IPG'),
@@ -45,28 +51,7 @@ class PaymentGate extends Controller
             "card_number" => $request->card_number,
             // To call callback in GET type.
             "callback_method" => 1
-        ];
-
-        // Make a http call to request payment.
-        $curl = curl_init();
-        curl_setopt_array($curl, [
-            CURLOPT_URL => env('PAY_STAR_IPG_END_POINT') . '/create',
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => '',
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 0,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => 'POST',
-            CURLOPT_POSTFIELDS => json_encode($payloadRequest),
-            CURLOPT_HTTPHEADER => [
-                'Authorization: Bearer ' . env('PAY_STAR_IPG_GATEWAY_ID'),
-                'Content-Type: application/json'
-            ],
-        ]);
-        $response = curl_exec($curl);
-        $response = json_decode($response);
-        curl_close($curl);
+        ])->object();
 
         // Process request.
         $invoice->create_method_status = $response->status;
