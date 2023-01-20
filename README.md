@@ -1,5 +1,5 @@
-# PAY-STAR TEST
-### This project designed as a employment test.
+# PAY-STAR PaymentGate implementation on Laravel.
+### This project designed as a test.
 #
 ## APIs
 Get a new fake cart to show in UI.
@@ -63,7 +63,7 @@ To run project, inside directory of project run bellow command:
     ./vendor/bin/sail up
 ```
 #
-## Datebase diagram
+## Database diagram
 ![Image alt text](/extras/diagram.png)
 
 In each reload in checkout page make a new fake cart for customer ('cart' and 'cart_detail' table).
