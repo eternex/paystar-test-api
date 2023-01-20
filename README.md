@@ -68,4 +68,4 @@ To run project, inside directory of project run bellow command:
 
 In each reload in checkout page make a new fake cart for customer ('cart' and 'cart_detail' table).
 
-In each request for payment make a new invoice that stored in 'invoice' table, After operaion finsihed in IPG (success or fail payment doesn' matter), The 'invoice_paid' table filled,
+In each request for payment make a new invoice that stored in 'invoice' table, After operaion finsihed in IPG (success or fail payment doesn't matter), The 'invoice_paid' table filled,
